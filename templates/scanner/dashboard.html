@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard — CyberShield India{% endblock %}
+{% block content %}
+
+<div class="page-container">
+
+  <!-- ── Hero Scan Section ──────────────────────────────────────────────── -->
+  <section class="scan-hero">
+    <div class="scan-hero-bg"></div>
+    <div class="container-fluid px-4 position-relative">
+      <div class="row justify-content-center">
+        <div class="col-xl-9 col-lg-11">
+
+          <div class="text-center mb-5">
+            <div class="hero-badge mb-3">
+              <i class="bi bi-robot me-1"></i> AI-Powered Scanner
+            </div>
+            <h1 class="hero-title">
+              <span class="gradient-text">Is this link safe?</span><br/>
+              Check instantly — before you click!
+            </h1>
+            <p class="hero-subtitle">Paste any suspicious URL, bank link, or WhatsApp message link below</p>
+          </div>
+
+          <!-- Scan Card -->
+          <div class="scan-card">
+            <!-- Category Selector -->
+            <div class="category-selector mb-4">
+              <button type="button" class="cat-pill active" onclick="setCategory('Link', this)">
+                <i class="bi bi-link-45deg"></i> Link
+              </button>
+              <button type="button" class="cat-pill" onclick="setCategory('Email', this)">
+                <i class="bi bi-envelope"></i> Email
+              </button>
+              <button type="button" class="cat-pill" onclick="setCategory('Message', this)">
+                <i class="bi bi-chat-left-dots"></i> Message
+              </button>
+            </div>
+
+            <form method="POST" action="{% url 'scanner:scan' %}" id="scanForm">
+              {% csrf_token %}
+              {{ form.category }}
+              <div class="scan-input-group">
+                <div class="scan-input-icon"><i class="bi bi-link-45deg"></i></div>
+                {{ form.url }}
+                <button type="submit" class="scan-btn" id="scanBtn">
+                  <span class="scan-btn-text"><i class="bi bi-search me-2"></i>Scan Now</span>
+                  <span class="scan-btn-loading d-none">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Scanning…
+                  </span>
+                </button>
+              </div>
+              <div class="scan-examples mt-3">
+                <span class="example-label">Try:</span>
+                <button type="button" class="example-pill" onclick="fillExample('http://free-reward-india.xyz/claim')">
+                  🎁 Fake Reward
+                </button>
+                <button type="button" class="example-pill" onclick="fillExample('http://sbi-kyc-verify.tk/update')">
+                  🏦 Fake Bank KYC
+                </button>
+                <button type="button" class="example-pill" onclick="fillExample('https://www.google.com')">
+                  ✅ Safe URL
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats Row ──────────────────────────────────────────────────────── -->
+  <section class="stats-section">
+    <div class="container-fluid px-4">
+      <div class="row g-4 justify-content-center">
+        <div class="col-xl-3 col-md-4 col-sm-6">
+          <div class="stat-card stat-total">
+            <div class="stat-icon"><i class="bi bi-search"></i></div>
+            <div class="stat-info">
+              <div class="stat-value">{{ total }}</div>
+              <div class="stat-label">Total Scans</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-4 col-sm-6">
+          <div class="stat-card stat-phish">
+            <div class="stat-icon"><i class="bi bi-bug"></i></div>
+            <div class="stat-info">
+              <div class="stat-value">{{ phish }}</div>
+              <div class="stat-label">Phishing Detected</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-4 col-sm-6">
+          <div class="stat-card stat-safe">
+            <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+            <div class="stat-info">
+              <div class="stat-value">{{ safe }}</div>
+              <div class="stat-label">Safe Links</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-4 col-sm-6">
+          <div class="stat-card stat-acc">
+            <div class="stat-icon"><i class="bi bi-cpu"></i></div>
+            <div class="stat-info">
+              <div class="stat-value">95%+</div>
+              <div class="stat-label">Model Accuracy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Recent Scans ───────────────────────────────────────────────────── -->
+  {% if recent_scans %}
+  <section class="recent-section">
+    <div class="container-fluid px-4">
+      <div class="section-header">
+        <h2 class="section-title"><i class="bi bi-clock-history me-2"></i>Recent Scans</h2>
+        <a href="{% url 'scanner:history' %}" class="btn-view-all">
+          View All <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+      <div class="row g-3">
+        {% for scan in recent_scans %}
+        <div class="col-xl-4 col-lg-6">
+          <div class="recent-scan-card {% if scan.is_phishing %}card-phish{% else %}card-safe{% endif %}">
+            <div class="recent-scan-header">
+              <div class="result-badge {% if scan.is_phishing %}badge-phish{% else %}badge-safe{% endif %}">
+                <i class="bi bi-{% if scan.is_phishing %}exclamation-triangle{% else %}shield-check{% endif %} me-1"></i>
+                {{ scan.result }}
+              </div>
+              <span class="scan-conf">{{ scan.confidence_int }}%</span>
+            </div>
+            <div class="recent-scan-url">{{ scan.url|truncatechars:60 }}</div>
+            <div class="recent-scan-footer">
+              <span>{{ scan.scanned_at|date:"d M Y, H:i" }}</span>
+              <a href="{% url 'scanner:result' scan.pk %}" class="btn-mini">Details</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── Tips Section ───────────────────────────────────────────────────── -->
+  <section class="tips-section">
+    <div class="container-fluid px-4">
+      <h2 class="section-title mb-4"><i class="bi bi-lightbulb me-2"></i>Identify Phishing — Tips</h2>
+      <div class="row g-3">
+        {% for tip in tips %}
+        <div class="col-md-4">
+          <div class="tip-card">
+            <div class="tip-icon">{{ tip.icon }}</div>
+            <h5>{{ tip.title }}</h5>
+            <p>{{ tip.body }}</p>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="col-md-4">
+          <div class="tip-card"><div class="tip-icon">🔗</div><h5>Suspicious URL?</h5><p>URLs with many dashes (-), numbers, or ending in .xyz/.tk/.ml are often fake.</p></div>
+        </div>
+        <div class="col-md-4">
+          <div class="tip-card"><div class="tip-icon">🏦</div><h5>Bank will never ask for OTP</h5><p>SBI, HDFC, Paytm — No bank will ever ask for your OTP or password through a link.</p></div>
+        </div>
+        <div class="col-md-4">
+          <div class="tip-card"><div class="tip-icon">🎁</div><h5>If it looks too good to be free...</h5><p>"Free iPhone", "Cash Rewards", "Lucky Draw" — these are all common phishing tactics.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setCategory(cat, btn) {
+  document.getElementById('id_scan_category').value = cat;
+  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Update placeholder based on type
+  const input = document.getElementById('id_scan_url');
+  if (cat === 'Email') input.placeholder = 'Paste the suspicious email sender address or link...';
+  else if (cat === 'Message') input.placeholder = 'Paste the link from your SMS/WhatsApp...';
+  else input.placeholder = 'Paste a suspicious URL or link here...';
+}
+
+function fillExample(url) {
+  document.getElementById('id_scan_url').value = url;
+  document.getElementById('id_scan_url').focus();
+}
+
+document.getElementById('scanForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const form = this;
+  if (!form.checkValidity()) return;
+
+  const btn = document.getElementById('scanBtn');
+  const btnText = document.querySelector('.scan-btn-text');
+  const btnLoading = document.querySelector('.scan-btn-loading');
+
+  // Show loading state
+  btn.disabled = true;
+  btnText.classList.add('d-none');
+  btnLoading.classList.remove('d-none');
+
+  const formData = new FormData(form);
+
+  fetch("{% url 'scanner:ajax_scan' %}", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.scan_id) {
+      // Success: Redirect to result page
+      window.location.href = `/scanner/result/${data.scan_id}/`;
+    } else {
+      throw new Error(data.error || "Unknown error occurred");
+    }
+  })
+  .catch(error => {
+    // Reset button on error
+    btn.disabled = false;
+    btnText.classList.remove('d-none');
+    btnLoading.classList.add('d-none');
+    
+    // Show error toast (assuming we have a showToast function or just alert)
+    alert("Scan Error: " + error.message);
+  });
+});
+</script>
+{% endblock %}

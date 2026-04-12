@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Admin Panel — CyberShield India{% endblock %}
+{% block content %}
+
+<div class="page-container">
+  <div class="container-fluid px-4">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="bi bi-bar-chart-line me-2"></i>Admin Panel</h1>
+        <p class="page-sub">System-wide analytics &amp; monitoring</p>
+      </div>
+      <a href="{% url 'admin_panel:all_scans' %}" class="btn-primary-outline">
+        <i class="bi bi-table me-1"></i>All Scans
+      </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-5">
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-total">
+          <div class="stat-icon"><i class="bi bi-people"></i></div>
+          <div class="stat-info"><div class="stat-value">{{ total_users }}</div><div class="stat-label">Total Users</div></div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-acc">
+          <div class="stat-icon"><i class="bi bi-search"></i></div>
+          <div class="stat-info"><div class="stat-value">{{ total_scans }}</div><div class="stat-label">Total Scans</div></div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-phish">
+          <div class="stat-icon"><i class="bi bi-bug"></i></div>
+          <div class="stat-info"><div class="stat-value">{{ phish_scans }}</div><div class="stat-label">Phishing Found</div></div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-safe">
+          <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+          <div class="stat-info"><div class="stat-value">{{ phish_pct }}%</div><div class="stat-label">Phishing Rate</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Chart -->
+      <div class="col-lg-8">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="bi bi-graph-up me-2"></i>Scans — Last 7 Days</h3>
+          <canvas id="scanChart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Pie Chart -->
+      <div class="col-lg-4">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="bi bi-pie-chart me-2"></i>Safe vs Phishing</h3>
+          <canvas id="pieChart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Users -->
+      <div class="col-lg-5">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="bi bi-trophy me-2"></i>Top Users by Scans</h3>
+          <table class="table history-table">
+            <thead><tr><th>User</th><th>Scans</th></tr></thead>
+            <tbody>
+              {% for u in top_users %}
+              <tr>
+                <td>{{ u.username }}</td>
+                <td><strong>{{ u.scan_count }}</strong></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="2" class="text-center text-muted">No data yet</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Scans -->
+      <div class="col-lg-7">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="bi bi-clock-history me-2"></i>Recent Scans (All Users)</h3>
+          <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
+            <table class="table history-table">
+              <thead><tr><th>User</th><th>URL</th><th>Result</th><th>Time</th></tr></thead>
+              <tbody>
+                {% for s in recent_scans %}
+                <tr class="{% if s.is_phishing %}row-phish{% else %}row-safe{% endif %}">
+                  <td>{{ s.user.username }}</td>
+                  <td class="row-url">{{ s.url|truncatechars:35 }}</td>
+                  <td>
+                    <span class="result-pill {% if s.is_phishing %}pill-phish{% else %}pill-safe{% endif %}">
+                      {{ s.result }}
+                    </span>
+                  </td>
+                  <td><small>{{ s.scanned_at|date:"d M, H:i" }}</small></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted">No scans yet</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+const labels = {{ chart_labels|safe }};
+const data   = {{ chart_data|safe }};
+
+// Line Chart
+new Chart(document.getElementById('scanChart'), {
+  type: 'line',
+  data: {
+    labels: labels.length ? labels : ['No data'],
+    datasets: [{
+      label: 'Scans per Day',
+      data: data.length ? data : [0],
+      borderColor: '#7c3aed',
+      backgroundColor: 'rgba(124,58,237,0.15)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#a78bfa',
+      pointRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#e2e8f0' } } },
+    scales: {
+      x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+    }
+  }
+});
+
+// Pie Chart
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Safe', 'Phishing'],
+    datasets: [{
+      data: [{{ safe_scans }}, {{ phish_scans }}],
+      backgroundColor: ['#10b981', '#ef4444'],
+      borderColor: ['#0d9488', '#dc2626'],
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#e2e8f0' } }
+    }
+  }
+});
+</script>
+{% endblock %}

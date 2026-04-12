@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}CyberShield India — Phishing Detector{% endblock %}</title>
+  <meta name="description" content="AI-powered phishing link detector for India. Check if any URL is safe or a scam instantly." />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ── NAVBAR ─────────────────────────────────────────────────────────────── -->
+{% if user.is_authenticated %}
+<nav class="navbar navbar-expand-lg navbar-dark glass-nav fixed-top">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'scanner:dashboard' %}">
+      <div class="brand-icon"><i class="bi bi-shield-shaded"></i></div>
+      <span class="brand-text">Cyber<span class="text-accent">Shield</span></span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto ms-4 gap-1">
+        <li class="nav-item">
+          <a class="nav-link nav-pill {% if request.resolver_match.namespace == 'scanner' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+             href="{% url 'scanner:dashboard' %}">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-pill {% if request.resolver_match.url_name == 'history' %}active{% endif %}"
+             href="{% url 'scanner:history' %}">
+            <i class="bi bi-clock-history me-1"></i>History
+          </a>
+        </li>
+        {% if user.is_staff %}
+        <li class="nav-item">
+          <a class="nav-link nav-pill {% if request.resolver_match.namespace == 'admin_panel' %}active{% endif %}"
+             href="{% url 'admin_panel:dashboard' %}">
+            <i class="bi bi-bar-chart-line me-1"></i>Admin
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+      <div class="d-flex align-items-center gap-3">
+        <a href="{% url 'accounts:profile' %}" class="user-pill">
+          <div class="user-avatar">
+            {% if user.profile.avatar %}
+              <img src="{{ user.profile.avatar.url }}" alt="avatar"/>
+            {% else %}
+              {{ user.username|first|upper }}
+            {% endif %}
+          </div>
+          <span>{{ user.get_full_name|default:user.username }}</span>
+        </a>
+        <a href="{% url 'accounts:logout' %}" class="btn btn-logout">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<!-- ── MESSAGES ───────────────────────────────────────────────────────────── -->
+{% if messages %}
+<div class="messages-container {% if user.is_authenticated %}with-nav{% endif %}">
+  {% for msg in messages %}
+  <div class="alert-toast alert-toast-{{ msg.tags }} fade show" role="alert">
+    <i class="bi bi-{% if 'success' in msg.tags %}check-circle{% elif 'error' in msg.tags %}x-circle{% elif 'warning' in msg.tags %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+    {{ msg }}
+    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── MAIN CONTENT ───────────────────────────────────────────────────────── -->
+<main class="{% if user.is_authenticated %}main-with-nav{% endif %}">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
+{% if user.is_authenticated %}
+<footer class="site-footer">
+  <div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span class="footer-brand"><i class="bi bi-shield-shaded me-1 text-accent"></i>CyberShield India</span>
+      <span class="footer-text">AI-powered phishing protection for digital India 🇮🇳</span>
+      <span class="footer-text">Built with ❤️ using Django &amp; ML</span>
+    </div>
+  </div>
+</footer>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

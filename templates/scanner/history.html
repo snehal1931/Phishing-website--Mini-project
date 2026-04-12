@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Scan History — CyberShield India{% endblock %}
+{% block content %}
+
+<div class="page-container">
+  <div class="container-fluid px-4">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="bi bi-clock-history me-2"></i>Scan History</h1>
+        <p class="page-sub">All your previous URL scans — {{ total }} total</p>
+      </div>
+      <div class="d-flex gap-2">
+        {% if total %}
+        <form method="POST" action="{% url 'scanner:delete_all' %}" id="deleteAllForm">
+          {% csrf_token %}
+          <button type="submit" class="btn-danger-outline"
+                  onclick="return confirm('Delete ALL scan history? This cannot be undone.')">
+            <i class="bi bi-trash me-1"></i>Clear All
+          </button>
+        </form>
+        {% endif %}
+        <a href="{% url 'scanner:dashboard' %}" class="btn-primary-outline">
+          <i class="bi bi-plus-circle me-1"></i>New Scan
+        </a>
+      </div>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filter-pills mb-4">
+      <a href="?filter=all"      class="filter-pill {% if filter_by == 'all' %}active{% endif %}">
+        <i class="bi bi-grid me-1"></i>All
+      </a>
+      <a href="?filter=phishing" class="filter-pill phish-pill {% if filter_by == 'phishing' %}active{% endif %}">
+        <i class="bi bi-bug me-1"></i>Phishing
+      </a>
+      <a href="?filter=safe"     class="filter-pill safe-pill {% if filter_by == 'safe' %}active{% endif %}">
+        <i class="bi bi-shield-check me-1"></i>Safe
+      </a>
+    </div>
+
+    {% if page_obj %}
+    <!-- Table -->
+    <div class="history-table-wrap">
+      <table class="table history-table" id="historyTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>URL</th>
+            <th>Category</th>
+            <th>Result</th>
+            <th>Confidence</th>
+            <th>Scanned At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for scan in page_obj %}
+          <tr class="history-row {% if scan.is_phishing %}row-phish{% else %}row-safe{% endif %}">
+            <td class="row-num">{{ forloop.counter }}</td>
+            <td class="row-url">
+              <span class="url-text" title="{{ scan.url }}">{{ scan.url|truncatechars:55 }}</span>
+            </td>
+            <td>
+              <span class="cat-tag">{{ scan.category }}</span>
+            </td>
+            <td>
+              <span class="result-pill {% if scan.is_phishing %}pill-phish{% else %}pill-safe{% endif %}">
+                <i class="bi bi-{% if scan.is_phishing %}exclamation-triangle{% else %}shield-check{% endif %} me-1"></i>
+                {{ scan.result }}
+              </span>
+            </td>
+            <td>
+              <div class="mini-bar-wrap">
+                <div class="mini-bar {% if scan.is_phishing %}mini-bar-phish{% else %}mini-bar-safe{% endif %}"
+                     style="width:{{ scan.confidence_int }}%"></div>
+              </div>
+              <span class="conf-text">{{ scan.confidence_int }}%</span>
+            </td>
+            <td class="row-date">{{ scan.scanned_at|date:"d M Y" }}<br/><small>{{ scan.scanned_at|date:"H:i" }}</small></td>
+            <td>
+              <div class="action-btns">
+                <a href="{% url 'scanner:result' scan.pk %}" class="btn-icon btn-view" title="View Details">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <form method="POST" action="{% url 'scanner:delete_scan' scan.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-icon btn-del" title="Delete"
+                          onclick="return confirm('Delete this scan?')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="pagination-wrap mt-4">
+      <ul class="pagination-custom">
+        {% if page_obj.has_previous %}
+        <li><a href="?page={{ page_obj.previous_page_number }}&filter={{ filter_by }}" class="page-btn">
+          <i class="bi bi-chevron-left"></i>
+        </a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li><span class="page-btn active">{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li><a href="?page={{ num }}&filter={{ filter_by }}" class="page-btn">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li><a href="?page={{ page_obj.next_page_number }}&filter={{ filter_by }}" class="page-btn">
+          <i class="bi bi-chevron-right"></i>
+        </a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="bi bi-search"></i></div>
+      <h3>No scans yet</h3>
+      <p>Start by scanning a suspicious link on the dashboard.</p>
+      <a href="{% url 'scanner:dashboard' %}" class="btn-auth mt-3">
+        <i class="bi bi-plus-circle me-2"></i>Scan Your First Link
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

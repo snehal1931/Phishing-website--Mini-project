@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}All Scans — Admin{% endblock %}
+{% block content %}
+<div class="page-container">
+  <div class="container-fluid px-4">
+    <div class="page-header">
+      <h1 class="page-title"><i class="bi bi-table me-2"></i>All System Scans</h1>
+      <a href="{% url 'admin_panel:dashboard' %}" class="btn-primary-outline">← Back to Admin</a>
+    </div>
+    <div class="history-table-wrap">
+      <table class="table history-table">
+        <thead>
+          <tr><th>User</th><th>URL</th><th>Result</th><th>Confidence</th><th>Scanned At</th></tr>
+        </thead>
+        <tbody>
+          {% for s in scans %}
+          <tr class="{% if s.is_phishing %}row-phish{% else %}row-safe{% endif %}">
+            <td>{{ s.user.username }}</td>
+            <td class="row-url">{{ s.url|truncatechars:60 }}</td>
+            <td>
+              <span class="result-pill {% if s.is_phishing %}pill-phish{% else %}pill-safe{% endif %}">
+                {{ s.result }}
+              </span>
+            </td>
+            <td>{{ s.confidence_int }}%</td>
+            <td>{{ s.scanned_at|date:"d M Y, H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-4">No scans in the system.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

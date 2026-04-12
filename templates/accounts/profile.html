@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — CyberShield India{% endblock %}
+{% block content %}
+<div class="page-container">
+  <div class="container-fluid px-4">
+    <div class="row justify-content-center">
+      <div class="col-xl-8 col-lg-10">
+
+        <div class="page-header">
+          <h1 class="page-title"><i class="bi bi-person-circle me-2"></i>My Profile</h1>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-avatar-section">
+            {% if profile.avatar %}
+              <img src="{{ profile.avatar.url }}" class="profile-avatar-img" alt="Avatar"/>
+            {% else %}
+              <div class="profile-avatar-default">{{ user.username|first|upper }}</div>
+            {% endif %}
+            <div>
+              <h3 class="profile-name">{{ user.get_full_name|default:user.username }}</h3>
+              <p class="profile-meta"><i class="bi bi-envelope me-1"></i>{{ user.email }}</p>
+              {% if profile.city %}<p class="profile-meta"><i class="bi bi-geo-alt me-1"></i>{{ profile.city }}</p>{% endif %}
+              {% if profile.phone %}<p class="profile-meta"><i class="bi bi-phone me-1"></i>{{ profile.phone }}</p>{% endif %}
+            </div>
+          </div>
+
+          <div class="profile-stats-row">
+            <div class="profile-stat"><div class="ps-val">{{ profile.total_scans }}</div><div class="ps-label">Total Scans</div></div>
+            <div class="profile-stat"><div class="ps-val text-danger">{{ profile.phishing_found }}</div><div class="ps-label">Phishing Found</div></div>
+            <div class="profile-stat"><div class="ps-val text-success">{{ profile.total_scans|add:"-"|add:profile.phishing_found }}</div><div class="ps-label">Safe Links</div></div>
+            <div class="profile-stat"><div class="ps-val">{{ user.date_joined|date:"M Y" }}</div><div class="ps-label">Member Since</div></div>
+          </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="edit-profile-card mt-4">
+          <h3 class="features-title mb-4"><i class="bi bi-pencil me-2"></i>Edit Profile</h3>
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                {{ form.first_name }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Last Name</label>
+                {{ form.last_name }}
+              </div>
+              <div class="col-12">
+                <label class="form-label">Email</label>
+                {{ form.email }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                {{ form.phone }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">City</label>
+                {{ form.city }}
+              </div>
+              <div class="col-12">
+                <label class="form-label">Avatar</label>
+                {{ form.avatar }}
+              </div>
+            </div>
+            <button type="submit" class="btn-auth mt-4">
+              <i class="bi bi-save me-2"></i>Save Changes
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

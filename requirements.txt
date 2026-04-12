@@ -1,0 +1,9 @@
+django
+PyMySQL
+django-crispy-forms
+crispy-bootstrap5
+pillow
+pandas
+scikit-learn
+joblib
+numpy

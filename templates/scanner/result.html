@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Scan Result — CyberShield India{% endblock %}
+{% block content %}
+
+<div class="page-container">
+  <div class="container-fluid px-4">
+    <div class="row justify-content-center">
+      <div class="col-xl-9 col-lg-11">
+
+        <!-- ── Main Result Card ──────────────────────────────────────────── -->
+        <div class="result-hero {% if scan.is_phishing %}result-phishing{% else %}result-safe{% endif %}">
+          <div class="result-glow"></div>
+
+          <!-- Big Icon -->
+          <div class="result-icon-wrap">
+            {% if scan.is_phishing %}
+              <div class="result-icon phish-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </div>
+            {% else %}
+              <div class="result-icon safe-icon">
+                <i class="bi bi-shield-check-fill"></i>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Verdict -->
+          <div class="result-verdict">
+            {% if scan.is_phishing %}
+              <h1 class="verdict-phish">⚠️ PHISHING DETECTED!</h1>
+              <p class="verdict-sub">This link is DANGEROUS! Never open it.</p>
+            {% else %}
+              <h1 class="verdict-safe">✅ SAFE LINK</h1>
+              <p class="verdict-sub">This link appears safe. However, always stay cautious.</p>
+            {% endif %}
+          </div>
+
+          <!-- Confidence Meter -->
+          <div class="confidence-wrap">
+            <div class="confidence-label">
+              AI Confidence: <strong>{{ scan.confidence_int }}%</strong>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-fill {% if scan.is_phishing %}fill-phish{% else %}fill-safe{% endif %}"
+                   style="width: {{ scan.confidence_int }}%"></div>
+            </div>
+          </div>
+
+          <!-- Scanned URL -->
+          <div class="scanned-url-box">
+            <span class="label-url">Scanned URL:</span>
+            <span class="scanned-url-text">{{ scan.url }}</span>
+          </div>
+          <div class="scanned-category-box mt-2">
+            <span class="badge-cat"><i class="bi bi-tag me-1"></i>Category: {{ scan.get_category_display }}</span>
+          </div>
+        </div>
+
+        <!-- ── Feature Breakdown ─────────────────────────────────────────── -->
+        <div class="features-card mt-4">
+          <h3 class="features-title">
+            <i class="bi bi-cpu me-2"></i>Feature Analysis (16 Points)
+          </h3>
+          <div class="table-responsive">
+            <table class="table feature-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Value</th>
+                  <th>Indicator</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for label, value in feature_rows %}
+                <tr>
+                  <td class="feat-name">{{ label }}</td>
+                  <td class="feat-value">{{ value }}</td>
+                  <td>
+                    {% if label == "Uses HTTPS" %}
+                      {% if value == 1 %}<span class="ind-safe">✅ Good</span>
+                      {% else %}<span class="ind-warn">⚠️ Not HTTPS</span>{% endif %}
+                    {% elif label == "Has @ Symbol" or label == "Has IP Address" or label == "Non-Standard Port Used" or label == "Suspicious TLD (.xyz, .tk…)" %}
+                      {% if value == 1 %}<span class="ind-bad">🚨 Suspicious</span>
+                      {% else %}<span class="ind-safe">✅ Clean</span>{% endif %}
+                    {% elif label == "Suspicious Keywords Found" %}
+                      {% if value > 0 %}<span class="ind-bad">🚨 {{ value }} keyword(s)</span>
+                      {% else %}<span class="ind-safe">✅ None</span>{% endif %}
+                    {% else %}
+                      <span class="ind-neutral">{{ value }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── Action Buttons ────────────────────────────────────────────── -->
+        <div class="result-actions mt-4">
+          <a href="{% url 'scanner:dashboard' %}" class="btn-action-primary">
+            <i class="bi bi-search me-2"></i>Scan Another Link
+          </a>
+          <a href="{% url 'scanner:history' %}" class="btn-action-secondary">
+            <i class="bi bi-clock-history me-2"></i>View History
+          </a>
+          <button onclick="shareResult()" class="btn-action-secondary">
+            <i class="bi bi-share me-2"></i>Share Warning
+          </button>
+          <form method="POST" action="{% url 'scanner:delete_scan' scan.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn-action-danger"
+                    onclick="return confirm('Delete this scan record?')">
+              <i class="bi bi-trash me-2"></i>Delete
+            </button>
+          </form>
+        </div>
+
+        <!-- ── Safety Advice ─────────────────────────────────────────────── -->
+        {% if scan.is_phishing %}
+        <div class="safety-advice phish-advice mt-4">
+          <h4><i class="bi bi-exclamation-octagon me-2"></i>What should you do now?</h4>
+          <ul>
+            <li>🚫 NEVER open this link.</li>
+            <li>📵 Do not forward this link — even in WhatsApp groups.</li>
+            {% for advice in advice_list %}
+              <li>💡 {{ advice }}</li>
+            {% endfor %}
+            <li>🏦 If you have already clicked — change your bank and payment passwords immediately.</li>
+            <li>📞 Call the National Cybercrime Helpline: <strong>1930</strong></li>
+            <li>🌐 Report on the official portal: <strong>cybercrime.gov.in</strong></li>
+          </ul>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareResult() {
+  const txt = `CyberShield India Alert: The URL "${window.location.href}" was scanned. Result: {{ scan.result }} ({{ scan.confidence_int }}% confidence). Stay safe! 🛡️`;
+  if (navigator.share) {
+    navigator.share({ title: 'CyberShield Scan', text: txt });
+  } else {
+    navigator.clipboard.writeText(txt).then(() => alert('Copied to clipboard!'));
+  }
+}
+</script>
+{% endblock %}
